@@ -1,3 +1,4 @@
+import cecs327.CustomFile;
 import org.junit.Test;
 import java.io.File;
 

@@ -1,5 +1,5 @@
 import org.junit.Test;
-import utils.UUIDUtils;
+import cecs327.utils.UUIDUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -13,10 +13,20 @@ public class IPTest {
         System.out.println(localhost.getHostName());
         System.out.println(localhost.getHostAddress());
 
-        UUID id = UUIDUtils.getTimeBasedUUID();
+        UUID id = UUIDUtils.getNameBasedUUID();
         System.out.println(id);
         System.out.println(UUID.randomUUID());
 
     }
+
+    @Test
+    public void hashIP() throws UnknownHostException {
+        InetAddress host = InetAddress.getLocalHost();
+        System.out.println(host.getHostAddress());
+        System.out.println( host.hashCode());
+
+        System.out.println(host.getHostAddress().hashCode());
+    }
+
 
 }

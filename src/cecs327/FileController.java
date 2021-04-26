@@ -1,98 +1,67 @@
-import utils.Printer;
+package cecs327;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import cecs327.events.EventHandler;
+import cecs327.utils.LogPrinter;
+
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class Controller {
+public class FileController {
 
     String ownerID;
-    private int listeningPort;
-    private int sendingPort;
-    private DatagramSocket socket;
-    private List<String> nodeList;
+    private int fileReceivingPort;
+    private int fileSendingPort;
+    private EventHandler eh;
+    private Receiver receiver;
+    private Sender sender;
     private HashMap<String, HashMap<String, CustomFile>> globalFileMap;
 
-    public Controller(int lPort, int sPort, String owner) {
+    private volatile boolean atLeastOneTime = false;
+
+
+
+    // TODO: 添加一个类给 cecs327.Node，来跟踪 cecs327.Node 中文件的情况
+    private List<String> nodeList;
+
+    public FileController(int rPort, int sPort, String owner, EventHandler eh) {
         this.ownerID = owner;
-        this.listeningPort = lPort;
-        this.sendingPort = sPort;
-        this.nodeList = new ArrayList<>();
+        this.fileReceivingPort = rPort;
+        this.fileSendingPort = sPort;
         this.globalFileMap = new HashMap<>();
-        init();
+        init(eh);
     }
 
-    private void init() {
+    private void init(EventHandler eh) {
         this.globalFileMap.put(ownerID, new HashMap<String, CustomFile>());
         this.updateLocalNodeFileMap();
-        try {
-            Thread.sleep(500);
-        } catch (Exception e) {
-            System.out.println("startListening Fail!");
-            e.printStackTrace();
-        }
-
-        this.startListening();
-
-        try {
-            socket = new DatagramSocket();
-        } catch (Exception e) {
-            System.out.println("init() Fail!");
-            e.printStackTrace();
-        }
+        while (!atLeastOneTime) Thread.onSpinWait();
+        this.receiver = new Receiver(9999, eh);
+        this.sender = new Sender(9999);
+        startReceivingFiles();
     }
 
-    public void startListening() {
-        new Thread() {
-            public void run() {
-                try {
-                    DatagramSocket socket = new DatagramSocket(listeningPort);
-                    DatagramPacket packet = new DatagramPacket(new byte[8192], 8192);
-                    System.out.println("Start listening the message from port  " + listeningPort);
-                    while (true) {
-                        socket.receive(packet);
-                        byte[] arr = packet.getData();
-                        int len = packet.getLength();
-                        String message = new String(arr, 0, len);
-
-                        // Get sender's IP address
-                        String ip = packet.getAddress().getHostAddress();
-                        // Add the sender's IP address into global list
-                        nodeList.add(ip);
-
-                        System.out.println("Message: " + message);
-                        System.out.println("Sender IP: " + ip);
-                        System.out.println("nodeList : " + nodeList.toString());
-
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
-
+    private void startReceivingFiles() {
+        this.receiver.start();
     }
 
-    public void updateLocalNodeFileMap() {
+    private void updateLocalNodeFileMap() {
         new Thread() {
             public void run() {
                 // Get the directory we want to synchronize
-                File dir = new File("./sync");
+                File dir = new File("./sync/" + ownerID);
 
                 if (!dir.exists()) {
-                    if (dir.mkdir()) System.out.println("Directory sync does not exists, creat directory " +
+                    dir.mkdir();
+                    System.out.println("Directory sync does not exists, creat directory " +
                             "\nBegin Scanning...");
-                    ;
                 } else {
                     System.out.println("Directory sync exists \nBegin scanning...");
                 }
 
                 // localFileMap is used to temporarily store the files in local directory
                 Map<String, CustomFile> localFileMap = null;
+
                 SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
 
                 while (true) {
@@ -113,13 +82,18 @@ public class Controller {
                                 // If two files have different SHA256 or timestamp, update the record
                                 if (!localFile.equals(storedFile)) {
                                     updateFile(ownerID, fileName, localFileMap.get(fileName));
+                                    // TODO: Create a sendFileEvent
+
                                 }
                             }
                             // If the local does not have this file, then remove it in record
                             else {
-                                Printer.deleteBegin(fileName);
+                                LogPrinter.deleteBegin(fileName);
                                 entryIterator.remove();
-                                Printer.deleteSuccess(fileName);
+                                LogPrinter.deleteSuccess(fileName);
+
+                                // TODO: Create a removeFileEvent
+
                             }
                         }
 
@@ -130,8 +104,11 @@ public class Controller {
                             // When find there are new files, add them in record
                             if (!nodeFileMap.containsKey(fileName)) {
                                 addFile(ownerID, localFileMap.get(fileName));
+                                // TODO: Create a sendFileEvent
                             }
                         }
+
+                        atLeastOneTime = true;
 
                         try {
                             Thread.sleep(2000);
@@ -144,11 +121,6 @@ public class Controller {
         }.start();
     }
 
-    public void sendMessage(byte[] arr, String ip) throws IOException {
-        DatagramPacket packet = new DatagramPacket(arr, arr.length, InetAddress.getByName(ip), sendingPort);
-        socket.send(packet);
-    }
-
     /**
      * This method will add the file information into the global file map
      * @param ownerID
@@ -156,7 +128,7 @@ public class Controller {
      */
     public void addFile(String ownerID, CustomFile cf) {
         // When the global file map contains the node
-        Printer.addBegin(cf.getFileName());
+        LogPrinter.addBegin(cf.getFileName());
         if (globalFileMap.containsKey(ownerID)) {
             HashMap<String, CustomFile> nodeFileMap  = globalFileMap.get(ownerID);
             nodeFileMap.put(cf.getFileName(), cf);
@@ -168,7 +140,7 @@ public class Controller {
             nodeFileMap.put(cf.getFileName(), cf);
             globalFileMap.put(ownerID, nodeFileMap);
         }
-        Printer.addSuccess(cf.getFileName());
+        LogPrinter.addSuccess(cf.getFileName());
     }
 
     /**
@@ -184,25 +156,25 @@ public class Controller {
 
     public void updateFile(String ownerID, String fileName, CustomFile newFile) {
         HashMap<String, CustomFile> nodeFileMap = null;
-        Printer.updateBegin(fileName);
+        LogPrinter.updateBegin(fileName);
         if ((nodeFileMap = globalFileMap.get(ownerID)) != null) {
             CustomFile oldFile = null;
             if ((oldFile = nodeFileMap.get(fileName)) != null) {
                 nodeFileMap.put(fileName, newFile);
-                Printer.updateSuccess(fileName);
+                LogPrinter.updateSuccess(fileName);
             }
             else {
-                Printer.updateFail(fileName, Printer.UpdateFailType.FILE_NOT_EXIST);
+                LogPrinter.updateFail(fileName, LogPrinter.UpdateFailType.FILE_NOT_EXIST);
             }
         }
         else {
-            Printer.updateFail(fileName, Printer.UpdateFailType.OWNER_NOT_EXIST);
+            LogPrinter.updateFail(fileName, LogPrinter.UpdateFailType.OWNER_NOT_EXIST);
         }
     }
 
-
-    public void sendFileMap(String ip) {
-
+    public void sendData(String ip, byte[] data) throws IOException {
+        sender.sendData(ip, data);
     }
+
 
 }

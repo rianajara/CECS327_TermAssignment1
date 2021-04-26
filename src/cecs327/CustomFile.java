@@ -1,4 +1,6 @@
-import utils.SHA256Utils;
+package cecs327;
+
+import cecs327.utils.SHA256Utils;
 
 import java.io.File;
 import java.util.*;
@@ -47,6 +49,11 @@ public class CustomFile {
 
     public long getTimeStamp() {
         return timeStamp;
+    }
+
+    public String getDirPath() {
+        String path = this.file.getAbsolutePath().replace(fileName, "").split("\\.")[1];
+        return "." + path;
     }
 
     @Override

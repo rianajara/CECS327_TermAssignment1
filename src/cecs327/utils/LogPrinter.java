@@ -1,9 +1,9 @@
-package utils;
+package cecs327.utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class Printer {
+public class LogPrinter {
 
     public enum UpdateFailType {
         FILE_NOT_EXIST,
