@@ -10,24 +10,17 @@ import java.util.*;
 public class FileController {
 
     String ownerID;
-    private int fileReceivingPort;
-    private int fileSendingPort;
+    private int port;
     private EventHandler eh;
     private Receiver receiver;
     private Sender sender;
     private HashMap<String, HashMap<String, CustomFile>> globalFileMap;
-
     private volatile boolean atLeastOneTime = false;
-
-
-
-    // TODO: 添加一个类给 cecs327.Node，来跟踪 cecs327.Node 中文件的情况
     private List<String> nodeList;
 
-    public FileController(int rPort, int sPort, String owner, EventHandler eh) {
+    public FileController(int port, String owner, EventHandler eh) {
         this.ownerID = owner;
-        this.fileReceivingPort = rPort;
-        this.fileSendingPort = sPort;
+        this.port = port;
         this.globalFileMap = new HashMap<>();
         init(eh);
     }
@@ -36,8 +29,8 @@ public class FileController {
         this.globalFileMap.put(ownerID, new HashMap<String, CustomFile>());
         this.updateLocalNodeFileMap();
         while (!atLeastOneTime) Thread.onSpinWait();
-        this.receiver = new Receiver(9999, eh);
-        this.sender = new Sender(9999);
+        this.receiver = new Receiver(port, eh);
+        this.sender = new Sender(port);
         startReceivingFiles();
     }
 
@@ -175,6 +168,4 @@ public class FileController {
     public void sendData(String ip, byte[] data) throws IOException {
         sender.sendData(ip, data);
     }
-
-
 }

@@ -3,9 +3,6 @@ package cecs327.events;
 import cecs327.Node;
 import cecs327.Protocol;
 import cecs327.utils.DataReader;
-
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 
 public class EventHandler {
@@ -34,7 +31,6 @@ public class EventHandler {
             e.unpackData(data);
             node.onEvent(e);
         }
-        else if
 
     }
 

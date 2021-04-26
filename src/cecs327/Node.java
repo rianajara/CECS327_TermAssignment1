@@ -3,29 +3,24 @@ package cecs327;
 import cecs327.events.Event;
 import cecs327.events.EventHandler;
 import cecs327.utils.UUIDUtils;
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
 public class Node {
     String nameBasedUUID;
-    int eventListeningPort;
-    int eventSendingPort;
+    int port;
     EventHandler eh;
     HashMap<String, String> clientsMap;
     private FileController fileController;
-    // TODO: Encapsulate receiver and sender into Controller
 
-    //
-    public Node() {
+    public Node(int port) {
         nameBasedUUID = UUIDUtils.getNameBasedUUID().toString();
-        eventListeningPort = 9999;
-        eventSendingPort = 9999;
+        this.port = port;
 
         eh = EventHandler.getInstance();
         eh.setNode(this);
         // Use controller
-        fileController = new FileController(eventListeningPort, eventSendingPort, nameBasedUUID, eh);
+        fileController = new FileController(port, nameBasedUUID, eh);
         // 10000 port is used to transfer files
 
     }

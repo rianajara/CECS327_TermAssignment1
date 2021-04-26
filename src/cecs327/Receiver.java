@@ -13,9 +13,9 @@ public class Receiver extends Thread {
     public Receiver(int fileReceivingPort, EventHandler eh) {
         try {
             // Use a multi-thread server
-            server = new ServerSocket(9999);
+            server = new ServerSocket(fileReceivingPort);
             this.eh = eh;
-            System.out.println("File Receiver starts successfully! Bind " + 9999 + " port.");
+            System.out.println("File Receiver starts successfully! Bind " + fileReceivingPort + " port.");
         } catch (Exception e) {
             System.out.println("Initialize Receiver fail!");
             e.printStackTrace();
