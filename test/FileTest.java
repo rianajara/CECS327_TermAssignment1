@@ -42,6 +42,21 @@ public class FileTest {
 
     }
 
+    @Test
+    public void removeFileTest() {
+        File f = new File("./sync/test/testFile.txt");
+
+        f.delete();
+
+    }
+
+    @Test
+    public void removeDirTest() {
+        File dir = new File("./sync/test/");
+
+        dir.delete();
+    }
+
 
 
 }
