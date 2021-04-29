@@ -5,6 +5,10 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
 
+/**
+ * SHA256Utils helps to calculate the SHA256 of
+ * a file easily. It only takes a file as an input.
+ */
 public class SHA256Utils {
 
     public static String getFileSHA256(File file) {

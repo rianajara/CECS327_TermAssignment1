@@ -5,7 +5,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-
+/**
+ * The DataWriter class encapsulate ByteArrayOutputStream and
+ * DataOutputStream together, which reduce the redundancy code
+ * and provides a more convenient way to encapsulate data
+ */
 public class DataWriter {
     ByteArrayOutputStream baos;
     DataOutputStream dos;
@@ -39,6 +43,4 @@ public class DataWriter {
         baos.close();
         dos.close();
     }
-
-
 }

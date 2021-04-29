@@ -42,19 +42,20 @@ public class FileTest {
 
     }
 
-    @Test
-    public void removeFileTest() {
-        File f = new File("./sync/test/testFile.txt");
-
-        f.delete();
-
-    }
 
     @Test
-    public void removeDirTest() {
+    public void removeFolderTest() {
         File dir = new File("./sync/test/");
+        System.out.println("f.isDirectory() = " + dir.isDirectory());
+        System.out.println("f.delete() = " + dir.delete());
+
+
+        for (File f : dir.listFiles()) {
+            f.delete();
+        }
 
         dir.delete();
+
     }
 
 

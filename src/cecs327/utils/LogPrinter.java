@@ -3,12 +3,10 @@ package cecs327.utils;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/**
+ * LogPrinter is only used to print the log
+ */
 public class LogPrinter {
-
-    public enum UpdateFailType {
-        FILE_NOT_EXIST,
-        OWNER_NOT_EXIST
-    }
 
     private static SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
 
@@ -20,15 +18,9 @@ public class LogPrinter {
         System.out.println("[Update] [" + sdf.format(new Date()) + "] Update " + fileName + " success！");
     }
 
-    public static void updateFail(String fileName, UpdateFailType type) {
+    public static void updateFail(String fileName) {
         System.out.println("[Update Error] [" + sdf.format(new Date()) + "] Update " + fileName + " Fail！");
-        if (type == UpdateFailType.FILE_NOT_EXIST) {
-            System.out.println("[Update Error] [" + sdf.format(new Date()) + "] " + fileName + " does not exits!");
-        }
-        else if (type == UpdateFailType.OWNER_NOT_EXIST) {
-            System.out.println("[Update Error] [" + sdf.format(new Date()) + "] " + fileName + "'s owner does not exits!");
-        }
-
+        System.out.println("[Update Error] [" + sdf.format(new Date()) + "] " + fileName + " does not exits!");
     }
 
     public static void deleteBegin(String fileName) {

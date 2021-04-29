@@ -1,40 +1,95 @@
 package cecs327;
 
 import cecs327.events.EventHandler;
+import cecs327.events.RemoveFileEvent;
+import cecs327.events.SendFileEvent;
 import cecs327.utils.LogPrinter;
 
 import java.io.*;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
+/**
+ * FileController is the core of the entire program. It
+ * will track the local files and perform some operations
+ * based on different modification on each files. For
+ * example, if a file is updated, it the FileController
+ * will send a new copy of the file to other nodes in
+ * the network.
+ * Also, FileController plays the role
+ */
 public class FileController {
+    private static FileController instance = null;
 
-    String ownerID;
-    private int port;
-    private EventHandler eh;
-    private Receiver receiver;
-    private Sender sender;
-    private HashMap<String, HashMap<String, CustomFile>> globalFileMap;
-    private volatile boolean atLeastOneTime = false;
-    private List<String> nodeList;
 
-    public FileController(int port, String owner, EventHandler eh) {
-        this.ownerID = owner;
-        this.port = port;
-        this.globalFileMap = new HashMap<>();
-        init(eh);
+    public static FileController getInstance(int port, String owner, EventHandler eh,
+                                             HashMap<String, CustomFile> map,
+                                             HashMap<String, String> cmap) {
+        if (instance == null) {
+            instance = new FileController(port, owner, eh, map, cmap);
+        }
+
+        return instance;
     }
 
-    private void init(EventHandler eh) {
-        this.globalFileMap.put(ownerID, new HashMap<String, CustomFile>());
+    /**
+     * The ID of the node possessing this controller
+     */
+    String ownerID;
+
+    /**
+     * The port that used to receive event
+     */
+    private int port;
+
+    /**
+     * The event handler will handle different kinds of incoming events.
+     */
+    private EventHandler eh;
+
+    /**
+     * The receiver is a multi-thread server. It can handle many incoming data
+     * simultaneously.
+     */
+    private Receiver receiver;
+
+    /**
+     * Sender is used to send the event data.
+     */
+    private Sender sender;
+
+    /**
+     * Clients map will save the ID and IP of each node in the network.
+     */
+    private HashMap<String, String> clientsMap;
+
+    /**
+     * Local file map is used to track the status(information) of files
+     * belonging to the local node(machine)
+     */
+    private HashMap<String, CustomFile> filesRecordMap;
+
+    /**
+     * The flag is to make sure the program get the local file map
+     * first, and then start listening.
+     */
+    private volatile boolean atLeastOneTime = false;
+
+    private FileController() {}
+    private FileController(int port, String owner, EventHandler eh,
+                          HashMap<String, CustomFile> map,
+                          HashMap<String, String> cmap) {
+        this.clientsMap = cmap;
+        this.ownerID = owner;
+        this.port = port;
+        this.filesRecordMap = map;
+        init(eh, port);
+    }
+
+    private void init(EventHandler eh, int port) {
         this.updateLocalNodeFileMap();
         while (!atLeastOneTime) Thread.onSpinWait();
         this.receiver = new Receiver(port, eh);
         this.sender = new Sender(port);
-        startReceivingFiles();
-    }
-
-    private void startReceivingFiles() {
         this.receiver.start();
     }
 
@@ -46,37 +101,47 @@ public class FileController {
 
                 if (!dir.exists()) {
                     dir.mkdir();
-                    System.out.println("Directory sync does not exists, creat directory " +
+                    System.out.println("Directory " + ownerID + " does not exists, creat directory " +
                             "\nBegin Scanning...");
                 } else {
-                    System.out.println("Directory sync exists \nBegin scanning...");
+                    System.out.println("Directory " + ownerID + " exists \nBegin scanning...");
                 }
 
                 // localFileMap is used to temporarily store the files in local directory
                 Map<String, CustomFile> localFileMap = null;
 
-                SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
-
                 while (true) {
                     synchronized (this) {
+                        // In each loop, dir.listFiles() will get all latest files in the directory in an array
                         localFileMap = CustomFile.getFileList(dir.listFiles(), ownerID);
-                        // Get the nodeFileMap belonging to the local node
-                        HashMap<String, CustomFile> nodeFileMap = globalFileMap.get(ownerID);
-                        // Get the entrySet iterator of the local nodeFileMap
-                        Iterator<Map.Entry<String, CustomFile>> entryIterator = nodeFileMap.entrySet().iterator();
+
+                        // Get the entrySet iterator of the
+                        Iterator<Map.Entry<String, CustomFile>> entryIterator = filesRecordMap.entrySet().iterator();
 
                         while (entryIterator.hasNext()) {
                             String fileName = entryIterator.next().getKey();
 
-                            // When the directory has the same fileName in the nodeFileMap
+                            // When the localFileMap has the same fileName in key
                             if (localFileMap.containsKey(fileName)) {
                                 CustomFile localFile = localFileMap.get(fileName);
-                                CustomFile storedFile = nodeFileMap.get(fileName);
+                                CustomFile storedFile = filesRecordMap.get(fileName);
                                 // If two files have different SHA256 or timestamp, update the record
                                 if (!localFile.equals(storedFile)) {
-                                    updateFile(ownerID, fileName, localFileMap.get(fileName));
-                                    // TODO: Create a sendFileEvent
+                                    updateFile(fileName, localFile);
 
+                                    // THIS WILL HAPPEN ONLY WHEN IT HAS THE RECORD OF OTHER NODES
+                                    if (clientsMap.size() > 0) {
+                                        // Send the newly updated file to other nodes
+                                        SendFileEvent e = new SendFileEvent();
+                                        clientsMap.forEach((k, v) -> {
+                                            try {
+                                                byte[] data = e.createSendFileEventData(localFile);
+                                                sender.sendData(v, data);
+                                            } catch (IOException ioException) {
+                                                ioException.printStackTrace();
+                                            }
+                                        });
+                                    }
                                 }
                             }
                             // If the local does not have this file, then remove it in record
@@ -85,22 +150,49 @@ public class FileController {
                                 entryIterator.remove();
                                 LogPrinter.deleteSuccess(fileName);
 
-                                // TODO: Create a removeFileEvent
-
+                                // THIS WILL HAPPEN ONLY WHEN IT HAS THE RECORD OF OTHER NODES
+                                if (clientsMap.size() > 0) {
+                                    // Tell other nodes to remove this file
+                                    RemoveFileEvent e = new RemoveFileEvent();
+                                    clientsMap.forEach((k, v) -> {
+                                        try {
+                                            byte[] data = e.createRemoveFileEventData(ownerID, fileName);
+                                            sender.sendData(v, data);
+                                        } catch (IOException ioException) {
+                                            ioException.printStackTrace();
+                                        }
+                                    });
+                                }
                             }
                         }
 
-                        // At this point, the overlap is already updated and th e deleted files were
+                        // At this point, the overlap is already updated and the deleted files were
                         // removed from record
-                        // Iterate the localFileMap to find if there are new files
+                        // Iterate the localFileMap to find if there are new files that are not in
+                        // the filesRecordMap
                         for (String fileName : localFileMap.keySet()) {
                             // When find there are new files, add them in record
-                            if (!nodeFileMap.containsKey(fileName)) {
-                                addFile(ownerID, localFileMap.get(fileName));
-                                // TODO: Create a sendFileEvent
+                            if (!filesRecordMap.containsKey(fileName)) {
+                                CustomFile newAddedFile = localFileMap.get(fileName);
+                                addFile(newAddedFile);
+
+                                // THIS WILL HAPPEN ONLY WHEN IT HAS THE RECORD OF OTHER NODES
+                                if (clientsMap.size() > 0) {
+                                    // Send the newly added file to other nodes
+                                    SendFileEvent e = new SendFileEvent();
+                                    clientsMap.forEach((k, v) -> {
+                                        try {
+                                            byte[] data = e.createSendFileEventData(newAddedFile);
+                                            sender.sendData(v, data);
+                                        } catch (IOException ioException) {
+                                            ioException.printStackTrace();
+                                        }
+                                    });
+                                }
                             }
                         }
 
+                        //
                         atLeastOneTime = true;
 
                         try {
@@ -116,55 +208,38 @@ public class FileController {
 
     /**
      * This method will add the file information into the global file map
-     * @param ownerID
      * @param cf
      */
-    public void addFile(String ownerID, CustomFile cf) {
-        // When the global file map contains the node
+    private void addFile(CustomFile cf) {
+        // Add a file record into local file map
         LogPrinter.addBegin(cf.getFileName());
-        if (globalFileMap.containsKey(ownerID)) {
-            HashMap<String, CustomFile> nodeFileMap  = globalFileMap.get(ownerID);
-            nodeFileMap.put(cf.getFileName(), cf);
-        }
-        // When the global file map does not contain the node
-        else {
-            // Initialize a map for the node
-            HashMap<String, CustomFile> nodeFileMap = new HashMap<>();
-            nodeFileMap.put(cf.getFileName(), cf);
-            globalFileMap.put(ownerID, nodeFileMap);
-        }
+        filesRecordMap.put(cf.getFileName(), cf);
         LogPrinter.addSuccess(cf.getFileName());
     }
 
     /**
-     * This method will delete the file information from the global file map
-     * @param ownerID
-     * @param fileName
+     * This method will update the information of the file stored
+     * in the local file map
+     * @param fileName the target file name
+     * @param newFile the new file information
      */
-    public void removeFile(String ownerID, String fileName) {
-        if (globalFileMap.containsKey(ownerID)) {
-            globalFileMap.get(ownerID).remove(fileName);
-        }
-    }
-
-    public void updateFile(String ownerID, String fileName, CustomFile newFile) {
-        HashMap<String, CustomFile> nodeFileMap = null;
+    private void updateFile(String fileName, CustomFile newFile) {
         LogPrinter.updateBegin(fileName);
-        if ((nodeFileMap = globalFileMap.get(ownerID)) != null) {
-            CustomFile oldFile = null;
-            if ((oldFile = nodeFileMap.get(fileName)) != null) {
-                nodeFileMap.put(fileName, newFile);
-                LogPrinter.updateSuccess(fileName);
-            }
-            else {
-                LogPrinter.updateFail(fileName, LogPrinter.UpdateFailType.FILE_NOT_EXIST);
-            }
+        if (filesRecordMap.containsKey(fileName)) {
+            filesRecordMap.put(fileName, newFile);
+            LogPrinter.updateSuccess(fileName);
         }
         else {
-            LogPrinter.updateFail(fileName, LogPrinter.UpdateFailType.OWNER_NOT_EXIST);
+            LogPrinter.updateFail(fileName);
         }
     }
 
+    /**
+     * Send event
+     * @param ip target node IP address
+     * @param data event data
+     * @throws IOException
+     */
     public void sendData(String ip, byte[] data) throws IOException {
         sender.sendData(ip, data);
     }
