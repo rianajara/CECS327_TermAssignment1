@@ -105,15 +105,17 @@ public class Node {
      * going to leave, and remove the files belonging to it on other nodes
      */
     public void leave() {
-        LeaveEvent e = new LeaveEvent();
-        clientsMap.forEach((k, v) -> {
-            try {
-                byte[] data = e.createLeaveEventData(this.nameBasedUUID);
-                sendData(v, data);
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-            }
-        });
+        if (clientsMap.size() > 0) {
+            LeaveEvent e = new LeaveEvent();
+            clientsMap.forEach((k, v) -> {
+                try {
+                    byte[] data = e.createLeaveEventData(this.nameBasedUUID);
+                    sendData(v, data);
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            });
+        }
     }
 
     /**
