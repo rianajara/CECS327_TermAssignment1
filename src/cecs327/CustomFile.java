@@ -13,14 +13,9 @@ import java.util.*;
 public class CustomFile {
 
     /**
-     * OwnerID is the the ID of the node that the file belongs to
-     */
-    String ownerID;
-
-    /**
      * SHA256 is a encrypted number based on the content of the file
      */
-    String SHA256;
+    private String SHA256;
 
     private File file;
     private String fileName;
@@ -35,10 +30,9 @@ public class CustomFile {
      * return the local files in Map format. The key is the file name,
      * and the value is the CustomFile
      * @param files local file array
-     * @param ownerID the ID the of node having these files
      * @return
      */
-    public static Map<String, CustomFile> getFileList(File[] files, String ownerID) {
+    public static Map<String, CustomFile> getFileList(File[] files) {
         HashMap<String, CustomFile> map = new HashMap<>();
 
         if (files == null || files.length == 0) {
@@ -46,21 +40,18 @@ public class CustomFile {
         }
 
         for (File f : files) {
-            CustomFile cf = new CustomFile(f, ownerID);
+            CustomFile cf = new CustomFile(f);
             map.put(cf.getFileName(), cf);
         }
         return map;
     }
 
-    public CustomFile(File file, String ownewr) {
+    public CustomFile(File file) {
         this.file = file;
-        this.ownerID = ownewr;
         this.fileName = file.getName();
         this.SHA256 = SHA256Utils.getFileSHA256(file);
         this.timeStamp = file.lastModified();
     }
-
-    public String getOwnerID() { return ownerID; }
 
     public String getFileName() {
         return fileName;
@@ -79,7 +70,6 @@ public class CustomFile {
         if (o == null || getClass() != o.getClass()) return false;
         CustomFile that = (CustomFile) o;
         return timeStamp == that.timeStamp &&
-                Objects.equals(ownerID, that.ownerID) &&
                 Objects.equals(SHA256, that.SHA256) &&
                 Objects.equals(fileName, that.fileName);
     }
@@ -92,7 +82,6 @@ public class CustomFile {
     @Override
     public String toString() {
         return "CustomFile{" +
-                "ownerID='" + ownerID + '\'' +
                 ", SHA256='" + SHA256 + '\'' +
                 ", timeStamp=" + timeStamp +
                 '}';

@@ -7,7 +7,7 @@ public class FileTest {
 
     @Test
     public void test() throws IOException {
-        CustomFile cf = new CustomFile(new File("./sync/test/aaa.md"), "123");
+        CustomFile cf = new CustomFile(new File("./sync/test/aaa.md"));
         String dirPath = cf.getDirPath();
         System.out.println(dirPath);
         System.out.println(cf.getFileName());
@@ -58,6 +58,46 @@ public class FileTest {
 
     }
 
+    @Test
+    public void isFolderTest() {
+        File dir = new File("./sync/test");
+        File[] files = dir.listFiles();
 
+        for (File f : files) {
+            boolean isDir = f.isDirectory();
+            System.out.println(f.getName() + (isDir ? " is a dir." : " is a file."));
+            System.out.println(f.getPath().replace("\\", "/"));
+        }
+    }
+
+    @Test
+    public void pathFormatTest() {
+        File f = new File("./sync/test/testC ");
+        System.out.println(f.exists());
+        System.out.println(f.getPath());
+        System.out.println(f.getAbsolutePath());
+        f.mkdirs();
+
+    }
+
+    @Test
+    public void removeDirTest() {
+        File removedDir = new File("./sync/test/");
+        removeDir(removedDir);
+    }
+
+    public void removeDir(File removedDir) {
+        File[] files = removedDir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (!f.isDirectory()) {
+                    f.delete();
+                } else {
+                    removeDir(f);
+                }
+            }
+        }
+        removedDir.delete();
+    }
 
 }

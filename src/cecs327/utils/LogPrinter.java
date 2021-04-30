@@ -28,7 +28,7 @@ public class LogPrinter {
     }
 
     public static void deleteSuccess(String fileName) {
-        System.out.println("[Delete File] [" + sdf.format(new Date()) + "] Success remove" + fileName + " record!");
+        System.out.println("[Delete File] [" + sdf.format(new Date()) + "] Success remove " + fileName + " record!");
     }
 
     public static void addBegin(String fileName) {

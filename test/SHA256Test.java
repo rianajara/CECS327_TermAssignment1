@@ -9,7 +9,7 @@ public class SHA256Test {
     @Test
     public void test() {
         File f1 = new File("./sync/TestA.txt");
-        CustomFile cf = new CustomFile(f1, "BlackKnife");
+        CustomFile cf = new CustomFile(f1);
 
         System.out.println("cf.getSHA256() = " + cf.getSHA256());
     }

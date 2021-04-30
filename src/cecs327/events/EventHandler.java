@@ -60,6 +60,15 @@ public class EventHandler {
         else if (eventType == EventType.LEAVE_NETWORK) {
             Event e = new LeaveEvent();
             e.unpackData(data);
+            node.onEvent(e);
+        }
+        else if (eventType == EventType.CREATE_DIR) {
+            Event e = new CreateDirEvent();
+            e.unpackData(data);
+        }
+        else if(eventType == EventType.REMOVE_DIR) {
+            Event e = new RemoveDirEvent();
+            e.unpackData(data);
         }
 
     }

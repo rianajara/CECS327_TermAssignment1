@@ -1,5 +1,6 @@
 package cecs327.events;
 
+import cecs327.CustomFile;
 import cecs327.utils.DataReader;
 import cecs327.utils.DataWriter;
 
@@ -8,12 +9,12 @@ import java.io.IOException;
 
 public class RemoveFileEvent implements Event{
     private int type;
-    private String originNodeID;
+    private String filePath;
     private String removedFileName;
 
-    public byte[] createRemoveFileEventData(String id, String fileName) throws IOException {
+    public byte[] createRemoveFileEventData(String fileDirPath, String fileName) throws IOException {
         this.type = EventType.REMOVE_FILE;
-        this.originNodeID = id;
+        this.filePath = fileDirPath;
         this.removedFileName = fileName;
         return packData();
     }
@@ -28,10 +29,10 @@ public class RemoveFileEvent implements Event{
         System.out.println("Event Type: " + type);
 
         // 2. Read the UUID of the file's owner
-        int idLen = dr.readInt();
-        byte[] fileOwnerIdBytes = new byte[idLen];
-        dr.readFully(fileOwnerIdBytes);
-        this.originNodeID = new String(fileOwnerIdBytes);
+        int pathLen = dr.readInt();
+        byte[] removedFilePathBytes = new byte[pathLen];
+        dr.readFully(removedFilePathBytes);
+        this.filePath = new String(removedFilePathBytes).replace("\\", "/");
 
         // 3. Read the removed file name
         int fileNameLen = dr.readInt();
@@ -41,11 +42,9 @@ public class RemoveFileEvent implements Event{
 
         dr.close();
 
-        String dir = "./sync/" + originNodeID + "/";
-        File removedFile = new File(dir, removedFileName);
+        File removedFile = new File(filePath, removedFileName);
         removedFile.delete();
-
-        System.out.println("Remove the file " + removedFileName + " in folder [" + originNodeID + "]");
+        System.out.println("Remove the file " + removedFileName);
     }
 
     @Override
@@ -55,11 +54,11 @@ public class RemoveFileEvent implements Event{
         // 1. Write the event type
         dw.writeInt(type);
 
-        // 2. Write the UUID of the file's owner
-        byte[] nodeID = originNodeID.getBytes();
-        int UUIDLen = nodeID.length;
-        dw.writeInt(UUIDLen);
-        dw.write(nodeID);
+        // 2. Write the path of the removed file
+        byte[] filePathBytes = filePath.getBytes();
+        int pathLen = filePathBytes.length;
+        dw.writeInt(pathLen);
+        dw.write(filePathBytes);
 
         // 3. Write the removed file name
         byte[] removedFileNameBytes = removedFileName.getBytes();
@@ -74,6 +73,7 @@ public class RemoveFileEvent implements Event{
         return data;
     }
 
+
     @Override
     public int getEventType() {
         return type;
@@ -86,6 +86,6 @@ public class RemoveFileEvent implements Event{
 
     @Override
     public String getNodeUUID() {
-        return this.originNodeID;
+        return null;
     }
 }

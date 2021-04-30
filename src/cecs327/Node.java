@@ -4,6 +4,7 @@ import cecs327.events.*;
 import cecs327.utils.IPUtils;
 import cecs327.utils.UUIDUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -49,7 +50,8 @@ public class Node {
      * Local file map is used to track the status(information) of files
      * belonging to the local node(machine)
      */
-    private HashMap<String, CustomFile> localFileMap;
+    // private HashMap<String, CustomFile> localFileMap;
+    private Directory nodeDir;
 
     /**
      * FileController is responsible for different operations of the
@@ -69,9 +71,10 @@ public class Node {
 
         eh = EventHandler.getInstance();
         eh.setNode(this);
-        localFileMap = new HashMap<>();
+//        localFileMap = new HashMap<>();
+        nodeDir = new Directory(new File("./sync/" + nameBasedUUID));
         clientsMap = new HashMap<>();
-        fileController = FileController.getInstance(port, nameBasedUUID, eh, localFileMap, clientsMap);
+        fileController = FileController.getInstance(port, nameBasedUUID, eh, nodeDir, clientsMap);
         register = new Register(10000, eh);
         register.start();
     }
@@ -146,6 +149,9 @@ public class Node {
             System.out.println("Send all local copies to [" + e.getNodeUUID() + "]");
             sendLocalFiles(e.getNodeIP());
         }
+        else if (e.getEventType() == EventType.LEAVE_NETWORK) {
+            clientsMap.remove(e.getNodeUUID());
+        }
     }
 
     /**
@@ -153,15 +159,8 @@ public class Node {
      * @param ipAddress is the target node's IP address.
      */
     private void sendLocalFiles(String ipAddress) {
-        localFileMap.forEach((k, v) ->  {
-            SendFileEvent e = new SendFileEvent();
-            try {
-                byte[] data = e.createSendFileEventData(v);
-                sendData(ipAddress, data);
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-            }
-        });
+        fileController.sendCreateDirEvent(ipAddress, nodeDir.getDirPath());
+        fileController.sendDir(ipAddress, nodeDir);
     }
 
     /**

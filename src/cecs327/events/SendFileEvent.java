@@ -27,9 +27,9 @@ public class SendFileEvent implements Event {
         return senderUUID;
     }
 
-    public byte[] createSendFileEventData(CustomFile cf) throws IOException {
+    public byte[] createSendFileEventData(String senderUUID ,CustomFile cf) throws IOException {
         this.type = EventType.SEND_FILE;
-        this.senderUUID = cf.getOwnerID();
+        this.senderUUID = senderUUID;
         this.path = cf.getDirPath();
         this.fileName = cf.getFileName();
 
@@ -40,7 +40,7 @@ public class SendFileEvent implements Event {
     public byte[] packData() throws IOException {
         byte[] data = null;
         DataWriter dw = new DataWriter();
-        // 1. Read the event type
+        // 1. Write the event type
         dw.writeInt(type);
 
 
