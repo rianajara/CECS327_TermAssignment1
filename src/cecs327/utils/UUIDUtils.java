@@ -2,7 +2,6 @@ package cecs327.utils;
 import com.fasterxml.uuid.Generators;
 import com.fasterxml.uuid.impl.NameBasedGenerator;
 
-import java.net.InetAddress;
 import java.util.UUID;
 
 /**
@@ -22,8 +21,7 @@ public class UUIDUtils {
     public static UUID getNameBasedUUID() {
         UUID id = null;
         try {
-            // We assume the node only has one network interface card
-            id =  generator.generate(InetAddress.getLocalHost().getHostAddress());
+            id =  generator.generate(IPUtils.getLocalIP());
         } catch (Exception e) {
             e.printStackTrace();
         }

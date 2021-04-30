@@ -97,10 +97,10 @@ public class FileController {
         new Thread() {
             public void run() {
                 // Get the directory we want to synchronize
-                File dir = new File("./sync/" + ownerID);
+                File dir = new File("./sync/" + ownerID + "/");
 
                 if (!dir.exists()) {
-                    dir.mkdir();
+                    dir.mkdirs();
                     System.out.println("Directory " + ownerID + " does not exists, creat directory " +
                             "\nBegin Scanning...");
                 } else {

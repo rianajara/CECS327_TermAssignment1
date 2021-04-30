@@ -8,7 +8,7 @@
 
 This synchronization network is a event based network. All operations are triggered by different events.
 
-![diagram](R:/mdImages/diagram.png)
+![image-20210430175548014](R:/mdImages/image-20210430175548014.png)
 
 
 
@@ -25,6 +25,18 @@ This synchronization network is a event based network. All operations are trigge
 
 
 For example, Node A is going to send a file to Node B. Then, Node A will create a `sendFileEvent` entity which contains some key information for sending a file such as the path, filename, data of the file, etc. And Node A will send the entire entity to Node B. After Node B receives the entity, it will create the file based on the entity.
+
+
+
+# File Controller
+
+
+
+
+
+
+
+
 
 
 

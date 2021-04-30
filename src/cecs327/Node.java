@@ -1,13 +1,13 @@
 package cecs327;
 
 import cecs327.events.*;
+import cecs327.utils.IPUtils;
 import cecs327.utils.UUIDUtils;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -63,11 +63,7 @@ public class Node {
     public Node(int port) {
         show();
         nameBasedUUID = UUIDUtils.getNameBasedUUID().toString();
-        try {
-            IPAddress = InetAddress.getLocalHost().getHostAddress();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
+        IPAddress = IPUtils.getLocalIP();
 
         this.port = port == 10000 ? 9999 : port;
 
@@ -88,7 +84,7 @@ public class Node {
         try {
             JoinEvent e = new JoinEvent();
             byte[] data = e.createJointEventData(this.nameBasedUUID, this.IPAddress);
-            InetAddress addr = InetAddress.getByName("255.255.255.255");
+            InetAddress addr = InetAddress.getByName(IPUtils.getBroadCastAddr());
             DatagramSocket client = new DatagramSocket();
             DatagramPacket dp = new DatagramPacket(data, data.length, addr, 10000);
             client.send(dp);
