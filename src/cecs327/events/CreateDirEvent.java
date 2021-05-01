@@ -33,6 +33,7 @@ public class CreateDirEvent implements Event {
 
         File f = new File(path);
         if (!f.exists()) f.mkdir();
+        System.out.println("Create Dir + [" + f.getName() + "]");
     }
 
     @Override

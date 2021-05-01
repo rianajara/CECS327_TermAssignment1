@@ -68,6 +68,7 @@ public class RemoveDirEvent implements Event{
             }
         }
         removedDir.delete();
+        System.out.println("Remove dir [" + removedDir.getName() + "]");
     }
 
     @Override

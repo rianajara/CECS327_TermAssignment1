@@ -32,11 +32,3 @@ For example, Node A is going to send a file to Node B. Then, Node A will create 
 
 
 
-
-
-
-
-
-
-
-

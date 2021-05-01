@@ -62,10 +62,9 @@ public class FileController {
     private HashMap<String, String> clientsMap;
 
     /**
-     * Local file map is used to track the status(information) of files
+     * Node directory is used to track the status(information) of files
      * belonging to the local node(machine)
      */
-//    private HashMap<String, CustomFile> filesRecordMap;
     private Directory nodeRecordDir;
 
     /**
@@ -138,19 +137,31 @@ public class FileController {
         sender.sendData(ip, data);
     }
 
-
+    /**
+     * This method will take two directories as parameter. It sync the
+     * files in the first directory level first, and then it will sync
+     * the subdirectories.
+     * @param localDir
+     * @param recordDir
+     */
     private void syncDir(Directory localDir, Directory recordDir) {
         // 1. Compare files in the current dir
         HashMap<String, CustomFile> localDirFiles = localDir.getDirFiles();
         HashMap<String, CustomFile> recordDirFiles = recordDir.getDirFiles();
         syncFiles(localDirFiles, recordDirFiles);
 
-        // 2. Compare
+        // 2. Compare subdirectories
         HashMap<String, Directory> localSubDirs = localDir.getSubDirs();
         HashMap<String, Directory> recordSubDirs = recordDir.getSubDirs();
         syncSubDirs(localSubDirs, recordSubDirs);
     }
 
+
+    /**
+     * This method will sync the subdirectories with the same name.
+     * @param localSubDirs
+     * @param recordSubDirs
+     */
     private void syncSubDirs(HashMap<String, Directory> localSubDirs, HashMap<String, Directory> recordSubDirs) {
         Iterator<Map.Entry<String, Directory>> recordDirItr = recordSubDirs.entrySet().iterator();
         while (recordDirItr.hasNext()) {
@@ -191,7 +202,13 @@ public class FileController {
         }
     }
 
-
+    /**
+     * This will synchronize the latest information of local files
+     * to the record stored in the program. If it updates some files,
+     * then it will also send the new copy of the file to other nodes.
+     * @param localDirFiles is the latest files set
+     * @param recordDirFiles is the old files set
+     */
     private void syncFiles(HashMap<String, CustomFile> localDirFiles,
                            HashMap<String, CustomFile> recordDirFiles) {
 
@@ -249,6 +266,12 @@ public class FileController {
         }
     }
 
+    /**
+     * This is a recursive method that will send the entire dir
+     * to the target node
+     * @param IPAddress is the target node IP address
+     * @param newDir is the directory that needs to be sent
+     */
     public void sendDir(String IPAddress, Directory newDir) {
         sendCreateDirEvent(IPAddress, newDir.getDirPath());
 

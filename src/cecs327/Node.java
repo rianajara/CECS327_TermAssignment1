@@ -106,15 +106,33 @@ public class Node {
     public void leave() {
         if (clientsMap.size() > 0) {
             LeaveEvent e = new LeaveEvent();
-            clientsMap.forEach((k, v) -> {
+            clientsMap.forEach((nodeID, nodeIP) -> {
                 try {
                     byte[] data = e.createLeaveEventData(this.nameBasedUUID);
-                    sendData(v, data);
+                    sendData(nodeIP, data);
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
+
+                removeDir(new File("./sync/" + nodeID));
             });
         }
+    }
+
+    private void removeDir(File removedDir) {
+        File[] files = removedDir.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (!f.isDirectory()) {
+                    f.delete();
+                    System.out.println("Remove file " + f.getName());
+                } else {
+                    removeDir(f);
+                }
+            }
+        }
+        removedDir.delete();
+        System.out.println("Remove dir " + removedDir.getName());
     }
 
     /**
@@ -151,6 +169,7 @@ public class Node {
         }
         else if (e.getEventType() == EventType.LEAVE_NETWORK) {
             clientsMap.remove(e.getNodeUUID());
+
         }
     }
 
