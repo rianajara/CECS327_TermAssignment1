@@ -85,14 +85,14 @@ public class FileController {
     }
 
     private void init(EventHandler eh, int port) {
-        this.updateLocalNodeFileMap();
+        this.updateLocalDir();
         while (!atLeastOneTime) Thread.onSpinWait();
         this.receiver = new Receiver(port, eh);
         this.sender = new Sender(port);
         this.receiver.start();
     }
 
-    private void updateLocalNodeFileMap() {
+    private void updateLocalDir() {
         new Thread() {
             public void run() {
                 // Get the directory we want to synchronize
