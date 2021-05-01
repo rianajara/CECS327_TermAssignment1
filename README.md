@@ -40,6 +40,6 @@ Event handler is another core component of this program. It will be created in N
 
 # Example
 
-![](https://images-1259064069.cos.ap-guangzhou.myqcloud.com/images/diagram (1).png)
+![](https://images-1259064069.cos.ap-guangzhou.myqcloud.com/images/diagram.png)
 
 For example, Node A is going to send a file to Node B. Node A will create a `sendFileEvent` entity which contains some key information for sending a file such as the path, filename, data of the file, etc. And Node A will send the entire entity to Node B. The receiver of Node B will receive the event data and pass it to the event handler. The event handler will resolve the data and determine the type of the operation. Then, it will take out the data and create the corresponding files on Node B.
