@@ -25,27 +25,6 @@ public class CustomFile {
      */
     private long timeStamp;
 
-    /**
-     * This method will take the local files array as parameter and
-     * return the local files in Map format. The key is the file name,
-     * and the value is the CustomFile
-     * @param files local file array
-     * @return
-     */
-    public static Map<String, CustomFile> getFileList(File[] files) {
-        HashMap<String, CustomFile> map = new HashMap<>();
-
-        if (files == null || files.length == 0) {
-            return map;
-        }
-
-        for (File f : files) {
-            CustomFile cf = new CustomFile(f);
-            map.put(cf.getFileName(), cf);
-        }
-        return map;
-    }
-
     public CustomFile(File file) {
         this.file = file;
         this.fileName = file.getName();
